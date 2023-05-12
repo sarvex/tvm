@@ -28,6 +28,7 @@ compile it with TVM and generate a Zephyr project which can be flashed to a Zeph
 supported board to benchmark the model using EEMBC runner.
 """
 
+
 ######################################################################
 #
 #     .. include:: ../../../../gallery/how_to/work_with_microtvm/install_dependencies.rst
@@ -256,7 +257,7 @@ if MODEL_SHORT_NAME != "AD":
     project_options["compile_definitions"].append(f"-DOUT_QUANT_ZERO={quant_output_zero_point}")
 
 if USE_CMSIS:
-    project_options["compile_definitions"].append(f"-DCOMPILE_WITH_CMSISNN=1")
+    project_options["compile_definitions"].append("-DCOMPILE_WITH_CMSISNN=1")
 
 # Note: You might need to adjust this based on the board that you are using.
 project_options["config_main_stack_size"] = 4000

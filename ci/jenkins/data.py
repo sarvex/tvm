@@ -59,7 +59,7 @@ files_to_stash = {
 
 # AWS info
 aws_default_region = "us-west-2"
-aws_ecr_url = "dkr.ecr." + aws_default_region + ".amazonaws.com"
+aws_ecr_url = f"dkr.ecr.{aws_default_region}.amazonaws.com"
 
 # Docker Images
 docker_images = {

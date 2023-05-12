@@ -43,9 +43,7 @@ def docker_api(url: str, use_pagination: bool = False) -> Dict[str, Any]:
         if url not in TEST_DATA:
             raise urllib.error.HTTPError(url, 404, "Not found", {}, None)
         return TEST_DATA[url]
-    pagination = ""
-    if use_pagination:
-        pagination = f"?page_size={PAGE_SIZE}&page=1"
+    pagination = f"?page_size={PAGE_SIZE}&page=1" if use_pagination else ""
     url = DOCKER_API_BASE + url + pagination
     r, headers = get(url)
     reset = headers.get("x-ratelimit-reset")
@@ -96,14 +94,8 @@ if __name__ == "__main__":
     else:
         config = configparser.ConfigParser()
         config.read(IMAGE_TAGS_FILE)
-        repo_image_tags = {}
-        for name in other:
-            repo_image_tags[name] = config.get("jenkins", name)
-
-    images = {}
-    for name in other:
-        images[name] = repo_image_tags[name]
-
+        repo_image_tags = {name: config.get("jenkins", name) for name in other}
+    images = {name: repo_image_tags[name] for name in other}
     if args.testing_docker_data is not None:
         TEST_DATA = json.loads(args.testing_docker_data)
 

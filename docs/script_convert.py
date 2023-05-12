@@ -58,7 +58,6 @@ def bash_to_python(src_path: pathlib.Path, dest_path: pathlib.Path):
                         bash_ignore_detected = False
                     else:
                         new_line_required = False
-                        pass
                 elif bash_multiline_comment_detected:
                     if line == BASH_MULTILINE_COMMENT:
                         bash_multiline_comment_detected = False
@@ -67,18 +66,17 @@ def bash_to_python(src_path: pathlib.Path, dest_path: pathlib.Path):
                             assert len(line) > 2, "Detected empty line."
                             dest_f.write(line[2:])
                         new_line_required = True
+                elif line == BASH:
+                    bash_detected = True
+                elif line == BASH_IGNORE:
+                    bash_ignore_detected = True
+                elif line == BASH_MULTILINE_COMMENT:
+                    bash_multiline_comment_detected = True
                 else:
-                    if line == BASH:
-                        bash_detected = True
-                    elif line == BASH_IGNORE:
-                        bash_ignore_detected = True
-                    elif line == BASH_MULTILINE_COMMENT:
-                        bash_multiline_comment_detected = True
-                    else:
-                        if new_line_required:
-                            dest_f.write("\n")
-                        dest_f.write(f"{line}")
-                        new_line_required = True
+                    if new_line_required:
+                        dest_f.write("\n")
+                    dest_f.write(f"{line}")
+                    new_line_required = True
 
                 line = src_f.readline()
                 if new_line_required:

@@ -30,8 +30,7 @@ DRY_RUN = object()
 
 def compress_query(query: str) -> str:
     query = query.replace("\n", "")
-    query = re.sub("\s+", " ", query)
-    return query
+    return re.sub("\s+", " ", query)
 
 
 def post(url: str, body: Optional[Any] = None, auth: Optional[Tuple[str, str]] = None):
@@ -55,9 +54,7 @@ def post(url: str, body: Optional[Any] = None, auth: Optional[Tuple[str, str]] =
 
 
 def dry_run_token(is_dry_run: bool) -> Any:
-    if is_dry_run:
-        return DRY_RUN
-    return os.environ["GITHUB_TOKEN"]
+    return DRY_RUN if is_dry_run else os.environ["GITHUB_TOKEN"]
 
 
 class GitHubRepo:
@@ -207,5 +204,5 @@ def find_ccs(body: str) -> List[str]:
         users = [x.strip() for x in match.split("@")]
         reviewers += users
 
-    reviewers = set(x for x in reviewers if x != "")
+    reviewers = {x for x in reviewers if x != ""}
     return list(reviewers)

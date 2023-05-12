@@ -297,7 +297,7 @@ class XGBModel(PythonBasedModel):
             stage_scores = [[] for _ in range(len(states))]
             for pred, pack_id in zip(raw_preds, pack_ids):
                 stage_scores[pack_id].append(pred)
-            for idx, stage_score in enumerate(stage_scores):
+            for stage_score in stage_scores:
                 breakdown = np.append(breakdown, len(stage_score))
                 breakdown = np.concatenate((breakdown, np.array(stage_score)))
         else:
@@ -445,8 +445,7 @@ def predict_throughput_pack_sum(raw_preds, pack_ids):
     throughputs: np.ndarray
         The throughput
     """
-    sum_pred = np.bincount(pack_ids, weights=raw_preds)
-    return sum_pred
+    return np.bincount(pack_ids, weights=raw_preds)
 
 
 def pack_sum_square_error(preds, dtrain):
@@ -609,11 +608,7 @@ class CustomCallback(XGBoostCallback):
         if not self.state:
             self.state["maximize_score"] = self.maximize
             self.state["best_iteration"] = 0
-            if self.maximize:
-                self.state["best_score"] = float("-inf")
-            else:
-                self.state["best_score"] = float("inf")
-
+            self.state["best_score"] = float("-inf") if self.maximize else float("inf")
             assert model is not None
             if model.attr("best_score") is not None:
                 self.state["best_score"] = float(model.attr("best_score"))
@@ -636,7 +631,7 @@ class CustomCallback(XGBoostCallback):
 
         eval_res = []
         keys = list(res_dict.keys())
-        keys.sort(key=lambda x: x if self.metric_shortname not in x else "a" + x)
+        keys.sort(key=lambda x: x if self.metric_shortname not in x else f"a{x}")
         for key in keys:
             v = res_dict[key]
             eval_res.append([key] + v)

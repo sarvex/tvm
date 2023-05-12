@@ -95,7 +95,7 @@ def get_network(name, batch_size, dtype="float32"):
         )
         net = tvm.IRModule.from_expr(net)
     else:
-        raise ValueError("Unsupported network: " + name)
+        raise ValueError(f"Unsupported network: {name}")
 
     return net, params, input_shape, output_shape
 
@@ -122,7 +122,7 @@ def tune_tasks(
 ):
     from tvm.autotvm.tuner import XGBTuner
 
-    tmp_log_file = log_filename + ".tmp"
+    tmp_log_file = f"{log_filename}.tmp"
 
     for i, tsk in enumerate(reversed(tasks)):
         print("Task: ", tsk)
@@ -160,7 +160,7 @@ def tune_tasks(
         elif tuner == "gridsearch":
             tuner_obj = GridSearchTuner(tsk)
         else:
-            raise ValueError("Invalid tuner: " + tuner)
+            raise ValueError(f"Invalid tuner: {tuner}")
 
         tsk_trial = min(n_trial, len(tsk.config_space))
         tuner_obj.tune(
@@ -181,7 +181,7 @@ def evaluate_network(network, target, target_host, dtype, repeat):
     net, params, input_shape, output_shape = get_network(network, batch_size=1, dtype=dtype)
 
     # Auto Tuning
-    tune_log = "adreno-" + network + "-" + dtype + ".log"
+    tune_log = f"adreno-{network}-{dtype}.log"
     tuning_options = {
         "log_filename": tune_log,
         "early_stopping": None,
@@ -219,7 +219,7 @@ def evaluate_network(network, target, target_host, dtype, repeat):
 
     tmp = tempdir()
 
-    filename = "%s.so" % network
+    filename = f"{network}.so"
     lib.export_library(tmp.relpath(filename), ndk.create_shared)
 
     # upload library and params
@@ -242,8 +242,14 @@ def evaluate_network(network, target, target_host, dtype, repeat):
     ftimer = module.module.time_evaluator("run", dev, number=1, repeat=repeat)
     prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
     print(
-        "%-20s %-19s (%s)"
-        % (network + "-" + dtype, "%.2f ms" % np.mean(prof_res), "%.2f ms" % np.std(prof_res))
+        (
+            "%-20s %-19s (%s)"
+            % (
+                f"{network}-{dtype}",
+                "%.2f ms" % np.mean(prof_res),
+                "%.2f ms" % np.std(prof_res),
+            )
+        )
     )
     return (np.mean(prof_res), np.std(prof_res))
 
@@ -301,9 +307,9 @@ if __name__ == "__main__":
 
     for network in networks:
         ftime = evaluate_network(network, target, target_host, "float32", args.repeat)
-        results[network + "-float32"] = ftime
+        results[f"{network}-float32"] = ftime
         ftime = evaluate_network(network, target, target_host, "float16", args.repeat)
-        results[network + "-float16"] = ftime
+        results[f"{network}-float16"] = ftime
 
     print("----------------------------------------------------------------------")
     print("%-30s %-30s" % ("Network Name", "Mean Inference Time        (std dev)"))

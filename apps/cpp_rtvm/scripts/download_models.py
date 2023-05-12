@@ -25,7 +25,7 @@ dload_models = []
 try:
     from tensorflow.keras.applications.resnet50 import ResNet50
 
-    model_file_name = "{}/{}".format(tmp_dir + "keras-resnet50", "resnet50.h5")
+    model_file_name = f"{tmp_dir}keras-resnet50/resnet50.h5"
     model = ResNet50(include_top=True, weights="imagenet", input_shape=(224, 224, 3), classes=1000)
     model.save(model_file_name)
     dload_models.append(model_file_name)

@@ -353,7 +353,7 @@ def main():
     logger.setLevel(logging.INFO)
 
     if args.mode == "distill":
-        args.output = args.output or args.input + ".best.json"
+        args.output = args.output or f"{args.input}.best.json"
         distill_record_file(args.input, args.output)
 
 

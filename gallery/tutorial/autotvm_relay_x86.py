@@ -43,6 +43,7 @@ how to use them through the Python API.
 """
 
 
+
 ################################################################################
 # TVM is a deep learning compiler framework, with a number of different modules
 # available for working with deep learning models and operators. In this
@@ -170,7 +171,7 @@ mod, params = relay.frontend.from_onnx(onnx_model, shape_dict)
 with tvm.transform.PassContext(opt_level=3):
     lib = relay.build(mod, target=target, params=params)
 
-dev = tvm.device(str(target), 0)
+dev = tvm.device(target, 0)
 module = graph_executor.GraphModule(lib["default"](dev))
 
 ######################################################################
@@ -238,7 +239,7 @@ with open(labels_path, "r") as f:
 scores = softmax(tvm_output)
 scores = np.squeeze(scores)
 ranks = np.argsort(scores)[::-1]
-for rank in ranks[0:5]:
+for rank in ranks[:5]:
     print("class='%s' with probability=%f" % (labels[rank], scores[rank]))
 
 ################################################################################
@@ -360,38 +361,38 @@ for i, task in enumerate(tasks):
     tuner = "xgb"
 
     # create tuner
-    if tuner == "xgb":
-        tuner_obj = XGBTuner(task, loss_type="reg")
-    elif tuner == "xgb_knob":
-        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="knob")
-    elif tuner == "xgb_itervar":
-        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="itervar")
-    elif tuner == "xgb_curve":
-        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="curve")
-    elif tuner == "xgb_rank":
-        tuner_obj = XGBTuner(task, loss_type="rank")
-    elif tuner == "xgb_rank_knob":
-        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="knob")
-    elif tuner == "xgb_rank_itervar":
-        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="itervar")
-    elif tuner == "xgb_rank_curve":
-        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="curve")
-    elif tuner == "xgb_rank_binary":
-        tuner_obj = XGBTuner(task, loss_type="rank-binary")
-    elif tuner == "xgb_rank_binary_knob":
-        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="knob")
-    elif tuner == "xgb_rank_binary_itervar":
-        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="itervar")
-    elif tuner == "xgb_rank_binary_curve":
-        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="curve")
-    elif tuner == "ga":
+    if tuner == "ga":
         tuner_obj = GATuner(task, pop_size=50)
-    elif tuner == "random":
-        tuner_obj = RandomTuner(task)
     elif tuner == "gridsearch":
         tuner_obj = GridSearchTuner(task)
+    elif tuner == "random":
+        tuner_obj = RandomTuner(task)
+    elif tuner == "xgb":
+        tuner_obj = XGBTuner(task, loss_type="reg")
+    elif tuner == "xgb_curve":
+        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="curve")
+    elif tuner == "xgb_itervar":
+        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="itervar")
+    elif tuner == "xgb_knob":
+        tuner_obj = XGBTuner(task, loss_type="reg", feature_type="knob")
+    elif tuner == "xgb_rank":
+        tuner_obj = XGBTuner(task, loss_type="rank")
+    elif tuner == "xgb_rank_binary":
+        tuner_obj = XGBTuner(task, loss_type="rank-binary")
+    elif tuner == "xgb_rank_binary_curve":
+        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="curve")
+    elif tuner == "xgb_rank_binary_itervar":
+        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="itervar")
+    elif tuner == "xgb_rank_binary_knob":
+        tuner_obj = XGBTuner(task, loss_type="rank-binary", feature_type="knob")
+    elif tuner == "xgb_rank_curve":
+        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="curve")
+    elif tuner == "xgb_rank_itervar":
+        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="itervar")
+    elif tuner == "xgb_rank_knob":
+        tuner_obj = XGBTuner(task, loss_type="rank", feature_type="knob")
     else:
-        raise ValueError("Invalid tuner: " + tuner)
+        raise ValueError(f"Invalid tuner: {tuner}")
 
     tuner_obj.tune(
         n_trial=min(tuning_option["trials"], len(task.config_space)),
@@ -449,7 +450,7 @@ with autotvm.apply_history_best(tuning_option["tuning_records"]):
     with tvm.transform.PassContext(opt_level=3, config={}):
         lib = relay.build(mod, target=target, params=params)
 
-dev = tvm.device(str(target), 0)
+dev = tvm.device(target, 0)
 module = graph_executor.GraphModule(lib["default"](dev))
 
 ################################################################################
@@ -464,7 +465,7 @@ tvm_output = module.get_output(0, tvm.nd.empty(output_shape)).numpy()
 scores = softmax(tvm_output)
 scores = np.squeeze(scores)
 ranks = np.argsort(scores)[::-1]
-for rank in ranks[0:5]:
+for rank in ranks[:5]:
     print("class='%s' with probability=%f" % (labels[rank], scores[rank]))
 
 ################################################################################
@@ -498,8 +499,8 @@ optimized = (
 optimized = {"mean": np.mean(optimized), "median": np.median(optimized), "std": np.std(optimized)}
 
 
-print("optimized: %s" % (optimized))
-print("unoptimized: %s" % (unoptimized))
+print(f"optimized: {optimized}")
+print(f"unoptimized: {unoptimized}")
 
 ################################################################################
 # Final Remarks

@@ -60,7 +60,7 @@ sys.path.insert(0, str(tvm_path.resolve() / "docs"))
 # General information about the project.
 project = "tvm"
 author = "Apache Software Foundation"
-copyright = "2020 - 2022, %s" % author
+copyright = f"2020 - 2022, {author}"
 github_doc_root = "https://github.com/apache/tvm/tree/main/docs/"
 
 os.environ["TVM_BUILD_DOC"] = "1"
@@ -73,7 +73,7 @@ def git_describe_version(original_version):
     exec(compile(open(ver_py, "rb").read(), ver_py, "exec"), libver, libver)
     _, gd_version = libver["git_describe_version"]()
     if gd_version != original_version:
-        print("Use git describe based version %s" % gd_version)
+        print(f"Use git describe based version {gd_version}")
     return gd_version
 
 
@@ -165,14 +165,14 @@ def save_rst_example(example_rst, example_file, time_elapsed, memory_used, galle
     # The url is the md5 hash of the notebook path.
     example_fname = os.path.relpath(example_file, gallery_conf["src_dir"])
     ref_fname = example_fname.replace(os.path.sep, "_")
-    notebook_path = example_fname[:-2] + "ipynb"
+    notebook_path = f"{example_fname[:-2]}ipynb"
     digest = md5(notebook_path.encode()).hexdigest()
 
     # Fixed documentation versions must link to different (earlier) .ipynb notebooks.
     colab_url = f"{COLAB_URL_BASE}/{IPYTHON_GITHUB_BASE}"
     if "dev" not in version:
-        colab_url += version + "/"
-    colab_url += digest + "/" + os.path.basename(notebook_path)
+        colab_url += f"{version}/"
+    colab_url += f"{digest}/{os.path.basename(notebook_path)}"
 
     new_header = COLAB_HTML_HEADER.format(
         python_file=example_fname, ref_name=ref_fname, colab_url=colab_url, button_svg=BUTTON
@@ -201,8 +201,7 @@ def rst2md(text, gallery_conf, target_dir, heading_levels, real_func):
 
     def load_include(match):
         full_path = os.path.join(target_dir, match.group(2))
-        with open(full_path) as f:
-            lines = f.read()
+        lines = Path(full_path).read_text()
         indented = indent(lines, match.group(1)) + "\n"
         return indented
 
@@ -269,13 +268,13 @@ def jupyter_notebook(script_blocks, gallery_conf, target_dir, real_func):
     """
 
     requires_cuda = CURRENT_FILE_CONF.get("requires_cuda", False)
-    fixed_version = not "dev" in version
+    fixed_version = "dev" not in version
 
     if fixed_version and requires_cuda:
         install_block = INSTALL_TVM_CUDA_FIXED
-    elif fixed_version and not requires_cuda:
+    elif fixed_version:
         install_block = INSTALL_TVM_FIXED
-    elif not fixed_version and requires_cuda:
+    elif requires_cuda:
         install_block = INSTALL_TVM_CUDA_DEV
     else:
         install_block = INSTALL_TVM_DEV
@@ -386,7 +385,7 @@ html_favicon = "_static/img/tvm-logo-square.png"
 
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = project + "doc"
+htmlhelp_basename = f"{project}doc"
 
 # -- Options for LaTeX output ---------------------------------------------
 latex_elements = {}
@@ -394,9 +393,7 @@ latex_elements = {}
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
-latex_documents = [
-    (main_doc, "%s.tex" % project, project, author, "manual"),
-]
+latex_documents = [(main_doc, f"{project}.tex", project, author, "manual")]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/{.major}".format(sys.version_info), None),
@@ -626,20 +623,19 @@ header_dropdown = {
 
 
 def fixup_tutorials(original_url: str) -> str:
-    if "docs/tutorial" in original_url:
-        # tutorials true source is in Python or .txt files, but Sphinx only sees
-        # the generated .rst files so this maps them back to the source
-        if original_url.endswith("index.rst"):
-            # for index pages, go to the README files
-            return re.sub(
-                r"docs/tutorial/(.*)index\.rst", "gallery/tutorial/\\1README.txt", original_url
-            )
-        else:
-            # otherwise for tutorials, redirect to python files
-            return re.sub(r"docs/tutorial/(.*)\.rst", "gallery/tutorial/\\1.py", original_url)
-    else:
+    if "docs/tutorial" not in original_url:
         # do nothing for normal non-tutorial .rst files
         return original_url
+    # tutorials true source is in Python or .txt files, but Sphinx only sees
+    # the generated .rst files so this maps them back to the source
+    if original_url.endswith("index.rst"):
+        # for index pages, go to the README files
+        return re.sub(
+            r"docs/tutorial/(.*)index\.rst", "gallery/tutorial/\\1README.txt", original_url
+        )
+    else:
+        # otherwise for tutorials, redirect to python files
+        return re.sub(r"docs/tutorial/(.*)\.rst", "gallery/tutorial/\\1.py", original_url)
 
 
 html_context = {
@@ -699,7 +695,7 @@ def update_alias_docstring(name, obj, lines):
 
         if hasattr(sys.modules[amod], target_name):
             obj_type = ":py:func" if callable(obj) else ":py:class"
-            lines.append(".. rubric:: Alias of %s:`%s.%s`" % (obj_type, amod, target_name))
+            lines.append(f".. rubric:: Alias of {obj_type}:`{amod}.{target_name}`")
 
 
 def process_docstring(app, what, name, obj, options, lines):

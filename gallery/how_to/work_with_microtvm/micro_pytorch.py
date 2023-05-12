@@ -29,6 +29,7 @@ a PyTorch model. This tutorial can be executed on a x86 CPU using C runtime (CRT
 since the model would not fit on our current supported Zephyr boards.
 """
 
+
 ######################################################################
 #
 #     .. include:: ../../../../gallery/how_to/work_with_microtvm/install_dependencies.rst
@@ -203,5 +204,9 @@ with torch.no_grad():
     top1_torch = np.argmax(output.numpy())
     torch_class_key = class_id_to_key[top1_torch]
 
-print("Relay top-1 id: {}, class name: {}".format(top1_tvm, key_to_classname[tvm_class_key]))
-print("Torch top-1 id: {}, class name: {}".format(top1_torch, key_to_classname[torch_class_key]))
+print(
+    f"Relay top-1 id: {top1_tvm}, class name: {key_to_classname[tvm_class_key]}"
+)
+print(
+    f"Torch top-1 id: {top1_torch}, class name: {key_to_classname[torch_class_key]}"
+)

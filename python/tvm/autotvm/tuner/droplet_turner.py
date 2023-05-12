@@ -42,13 +42,11 @@ class DropletTuner(Tuner):
         self.space = task.config_space
         self.dims = []
 
-        for _, v in self.space.space_map.items():
-            self.dims.append(len(v))
-
+        self.dims.extend(len(v) for _, v in self.space.space_map.items())
         # start position
         start_position = [0] * len(self.dims) if start_position is None else start_position
         self.best_choice = (-1, [0] * len(self.dims), [99999])
-        self.visited = set([self.space.knob2point(start_position)])
+        self.visited = {self.space.knob2point(start_position)}
         self.execution, self.total_execution, self.batch = 1, max(self.dims), 16
         self.pvalue, self.step = pvalue, 1
         self.next = [(self.space.knob2point(start_position), start_position)]

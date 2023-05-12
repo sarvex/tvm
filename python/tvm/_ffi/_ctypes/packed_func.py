@@ -185,7 +185,7 @@ def _make_tvm_args(args, temp_args):
             type_codes[i] = ArgTypeCode.PACKED_FUNC_HANDLE
             temp_args.append(arg)
         else:
-            raise TypeError("Don't know how to handle type %s" % type(arg))
+            raise TypeError(f"Don't know how to handle type {type(arg)}")
     return values, type_codes, num_args
 
 
@@ -209,9 +209,12 @@ class PackedFuncBase(object):
         self.is_global = is_global
 
     def __del__(self):
-        if not self.is_global and _LIB is not None:
-            if _LIB.TVMFuncFree(self.handle) != 0:
-                raise get_last_ffi_error()
+        if (
+            not self.is_global
+            and _LIB is not None
+            and _LIB.TVMFuncFree(self.handle) != 0
+        ):
+            raise get_last_ffi_error()
 
     def __call__(self, *args):
         """Call the function with positional arguments
@@ -291,7 +294,7 @@ def _get_global_func(name, allow_missing=False):
     if allow_missing:
         return None
 
-    raise ValueError("Cannot find global function %s" % name)
+    raise ValueError(f"Cannot find global function {name}")
 
 
 # setup return handle for function type

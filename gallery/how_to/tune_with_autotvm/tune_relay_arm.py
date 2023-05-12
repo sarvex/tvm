@@ -117,7 +117,7 @@ def get_network(name, batch_size):
         )
         mod = tvm.IRModule.from_expr(net)
     else:
-        raise ValueError("Unsupported network: " + name)
+        raise ValueError(f"Unsupported network: {name}")
 
     return mod, params, input_shape, output_shape
 
@@ -213,7 +213,7 @@ use_android = False
 
 #### TUNING OPTION ####
 network = "resnet-18"
-log_file = "%s.%s.log" % (device_key, network)
+log_file = f"{device_key}.{network}.log"
 dtype = "float32"
 
 tuning_option = {
@@ -267,7 +267,7 @@ def tune_tasks(
     use_transfer_learning=True,
 ):
     # create tmp log file
-    tmp_log_file = log_filename + ".tmp"
+    tmp_log_file = f"{log_filename}.tmp"
     if os.path.exists(tmp_log_file):
         os.remove(tmp_log_file)
 
@@ -306,11 +306,10 @@ def tune_tasks(
         elif tuner == "gridsearch":
             tuner_obj = GridSearchTuner(tsk)
         else:
-            raise ValueError("Invalid tuner: " + tuner)
+            raise ValueError(f"Invalid tuner: {tuner}")
 
-        if use_transfer_learning:
-            if os.path.isfile(tmp_log_file):
-                tuner_obj.load_history(autotvm.record.load_from_file(tmp_log_file))
+        if use_transfer_learning and os.path.isfile(tmp_log_file):
+            tuner_obj.load_history(autotvm.record.load_from_file(tmp_log_file))
 
         # process tuning
         tsk_trial = min(n_trial, len(tsk.config_space))

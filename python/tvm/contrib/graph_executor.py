@@ -103,9 +103,7 @@ def get_device(libmod, device):
             assert _rpc_ffi_api.SessTableIndex(libmod) == cur_dev._rpc_sess._tbl_index
             num_rpc_dev += 1
             device_type = cur_dev.device_type % rpc_base.RPC_SESS_MASK
-        device_type_id.append(device_type)
-        device_type_id.append(cur_dev.device_id)
-
+        device_type_id.extend((device_type, cur_dev.device_id))
     if 0 < num_rpc_dev < len(device):
         raise ValueError("Either all or none of the devices should be rpc.")
     return device, num_rpc_dev, device_type_id
@@ -159,14 +157,18 @@ class GraphModule(object):
         try:
             self._set_input_zero_copy = module["set_input_zero_copy"]
         except AttributeError:
-            self._set_input_zero_copy = lambda *_: (_ for _ in ()).throw(
-                Exception("set_input_zero_copy is not implemented for C graph executor")
+            self._set_input_zero_copy = lambda *_: iter(()).throw(
+                Exception(
+                    "set_input_zero_copy is not implemented for C graph executor"
+                )
             )
         try:
             self._set_output_zero_copy = module["set_output_zero_copy"]
         except AttributeError:
-            self._set_output_zero_copy = lambda *_: (_ for _ in ()).throw(
-                Exception("set_output_zero_copy is not implemented for C graph executor")
+            self._set_output_zero_copy = lambda *_: iter(()).throw(
+                Exception(
+                    "set_output_zero_copy is not implemented for C graph executor"
+                )
             )
         self._run = module["run"]
         self._get_output = module["get_output"]
@@ -195,7 +197,7 @@ class GraphModule(object):
         if key is not None:
             v = self._get_input(key)
             if v is None:
-                raise RuntimeError("Could not find '%s' in graph's inputs" % key)
+                raise RuntimeError(f"Could not find '{key}' in graph's inputs")
             v.copyfrom(value)
 
         if params:
@@ -203,11 +205,7 @@ class GraphModule(object):
             keys = list(params.keys())
             keys.sort(key=lambda x: -np.prod(params[x].shape))
             for k in keys:
-                # TODO(zhiics) Skip the weights for submodule in a better way.
-                # We should use ConstLoaderModule for initialization and remove
-                # params from set_input
-                val = self._get_input(k)
-                if val:
+                if val := self._get_input(k):
                     self._get_input(k).copyfrom(params[k])
 
     def set_input_zero_copy(self, key=None, value=None, **params):
@@ -231,11 +229,7 @@ class GraphModule(object):
             keys = list(params.keys())
 
             for k in keys:
-                # TODO(zhiics) Skip the weights for submodule in a better way.
-                # We should use ConstLoaderModule for initialization and remove
-                # params from set_input
-                val = self._get_input(k)
-                if val:
+                if val := self._get_input(k):
                     self._set_input_zero_copy(k, params[k])
 
     def set_output_zero_copy(self, key, value):
@@ -490,8 +484,7 @@ class GraphModule(object):
             # Have to unpack kwargs into a single list
             args = []
             for k, v in kwargs.items():
-                args.append(k)
-                args.append(v)
+                args.extend((k, v))
             return self.module.time_evaluator(
                 "run_from_inputs",
                 device,

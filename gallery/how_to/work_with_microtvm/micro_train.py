@@ -26,6 +26,7 @@ to fit on embedded devices, and how those models can be
 deployed to Arduino using TVM.
 """
 
+
 ######################################################################
 # Motivation
 # ----------
@@ -197,7 +198,7 @@ unscaled_dataset = tf.keras.utils.image_dataset_from_directory(
     batch_size=32,
     shuffle=True,
     label_mode="categorical",
-    image_size=IMAGE_SIZE[0:2],
+    image_size=IMAGE_SIZE[:2],
 )
 rescale = tf.keras.layers.Rescaling(scale=1.0 / 255)
 full_dataset = unscaled_dataset.map(lambda im, lbl: (rescale(im), lbl))

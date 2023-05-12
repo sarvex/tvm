@@ -76,10 +76,7 @@ def register_object(type_key=None):
         _register_object(tindex, cls)
         return cls
 
-    if isinstance(type_key, str):
-        return register
-
-    return register(type_key)
+    return register if isinstance(type_key, str) else register(type_key)
 
 
 def get_object_type_index(cls):
@@ -210,9 +207,7 @@ def register_func(func_name, f=None, override=False):
         check_call(_LIB.TVMFuncRegisterGlobal(c_str(func_name), myf.handle, ioverride))
         return myf
 
-    if f:
-        return register(f)
-    return register
+    return register(f) if f else register
 
 
 def get_global_func(name, allow_missing=False):
@@ -246,10 +241,7 @@ def list_global_func_names():
     size = ctypes.c_uint()
 
     check_call(_LIB.TVMFuncListGlobalNames(ctypes.byref(size), ctypes.byref(plist)))
-    fnames = []
-    for i in range(size.value):
-        fnames.append(py_str(plist[i]))
-    return fnames
+    return [py_str(plist[i]) for i in range(size.value)]
 
 
 def extract_ext_funcs(finit):
@@ -275,7 +267,7 @@ def extract_ext_funcs(finit):
     ret = finit(myf.handle)
     _ = myf
     if ret != 0:
-        raise RuntimeError("cannot initialize with %s" % finit)
+        raise RuntimeError(f"cannot initialize with {finit}")
     return fdict
 
 
@@ -327,5 +319,5 @@ def _init_api_prefix(module_name, prefix):
         f = get_global_func(name)
         ff = _get_api(f)
         ff.__name__ = fname
-        ff.__doc__ = "TVM PackedFunc %s. " % fname
+        ff.__doc__ = f"TVM PackedFunc {fname}. "
         setattr(target_module, ff.__name__, ff)

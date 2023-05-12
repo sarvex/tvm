@@ -54,9 +54,8 @@ def main():
         (clml_params_save, gen_src) = clml.CLMLGenSrc(libm).get_artifacts()
         np.savez("clml_params.npz", **clml_params_save)
 
-        f_src = open("../clml_models.cc", "w")
-        f_src.write("\n".join(gen_src))
-        f_src.close()
+        with open("../clml_models.cc", "w") as f_src:
+            f_src.write("\n".join(gen_src))
         os.popen("clang-format-10 -i ../clml_models.cc")
 
 

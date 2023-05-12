@@ -31,6 +31,7 @@ See the following instructions on how to build it and setup RPC environment.
 
 """
 
+
 import os
 import tvm
 import numpy as np
@@ -57,7 +58,7 @@ target = "llvm"
 # Change target configuration.
 # Run `adb shell cat /proc/cpuinfo` to find the arch.
 arch = "arm64"
-target_host = "llvm -mtriple=%s-linux-android" % arch
+target_host = f"llvm -mtriple={arch}-linux-android"
 
 # Auto tuning is compute and time taking task, hence disabling for default run. Please enable it if required.
 is_tuning = False
@@ -105,7 +106,7 @@ print(tvmc_model.mod)
 rpc_tracker_host = os.environ.get("TVM_TRACKER_HOST", "127.0.0.1")
 rpc_tracker_port = int(os.environ.get("TVM_TRACKER_PORT", 9190))
 rpc_key = "android"
-rpc_tracker = rpc_tracker_host + ":" + str(rpc_tracker_port)
+rpc_tracker = f"{rpc_tracker_host}:{rpc_tracker_port}"
 
 # Auto tuning is compute intensive and time taking task.
 # It is set to False in above configuration as this script runs in x86 for demonstration.
@@ -140,24 +141,10 @@ if is_tuning:
 # OpenCLML offloading will try to accelerate supported operators by using OpenCLML proprietory operator library.
 # By default :code:`enable_clml` is set to False in above configuration section.
 
-if not enable_clml:
-    if local_demo:
-        tvmc_package = tvmc.compile(
-            tvmc_model,
-            target=target,
-        )
-    else:
-        tvmc_package = tvmc.compile(
-            tvmc_model,
-            target=target,
-            target_host=target_host,
-            cross=cross_compiler,
-            tuning_records=tune_log,
-        )
-else:
+if enable_clml:
     # Altrernatively, we can save the compilation output and save it as a TVMCPackage.
     # This way avoids loading of compiled module without compiling again.
-    target = target + ", clml"
+    target += ", clml"
     pkg_path = tmp_path.relpath("keras-resnet50.tar")
     tvmc.compile(
         tvmc_model,
@@ -171,6 +158,19 @@ else:
     # Load the compiled package
     tvmc_package = TVMCPackage(package_path=pkg_path)
 
+elif local_demo:
+    tvmc_package = tvmc.compile(
+        tvmc_model,
+        target=target,
+    )
+else:
+    tvmc_package = tvmc.compile(
+        tvmc_model,
+        target=target,
+        target_host=target_host,
+        cross=cross_compiler,
+        tuning_records=tune_log,
+    )
 # tvmc_package consists of tvmc_package.lib_path, tvmc_package.graph, tvmc_package.params
 # Saved TVMPackage is nothing but tar archive with mod.so, mod.json and mod.params.
 

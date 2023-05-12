@@ -201,19 +201,17 @@ class Handler(server.ProjectAPIHandler):
         with open(source_dir / "platform.c", "r") as f:
             model_h_template = Template(f.read())
 
-        all_module_names = []
-        for name in metadata["modules"].keys():
-            all_module_names.append(name)
-
+        all_module_names = list(metadata["modules"].keys())
         assert all(
             metadata["modules"][mod_name]["style"] == "full-model" for mod_name in all_module_names
         ), "when generating AOT, expect only full-model Model Library Format"
 
-        workspace_size_bytes = 0
-        for mod_name in all_module_names:
-            workspace_size_bytes += metadata["modules"][mod_name]["memory"]["functions"]["main"][0][
+        workspace_size_bytes = sum(
+            metadata["modules"][mod_name]["memory"]["functions"]["main"][0][
                 "workspace_size_bytes"
             ]
+            for mod_name in all_module_names
+        )
         template_values = {
             "workspace_size_bytes": workspace_size_bytes,
         }
@@ -254,16 +252,16 @@ class Handler(server.ProjectAPIHandler):
                     with filename.open("wb") as dst_file:
                         for line in lines:
                             line_str = str(line, "utf-8")
-                            # Check if line has an include
-                            result = re.search(r"#include\s*[<\"]([^>]*)[>\"]", line_str)
-                            if not result:
-                                dst_file.write(line)
-                            else:
+                            if result := re.search(
+                                r"#include\s*[<\"]([^>]*)[>\"]", line_str
+                            ):
                                 new_include = self._find_modified_include_path(
                                     project_dir, filename, result.groups()[0]
                                 )
                                 updated_line = f'#include "{new_include}"\n'
                                 dst_file.write(updated_line.encode("utf-8"))
+                            else:
+                                dst_file.write(line)
 
     # Most of the files we used to be able to point to directly are under "src/standalone_crt/include/".
     # Howver, crt_config.h lives under "src/standalone_crt/crt_config/", and more exceptions might
@@ -441,7 +439,7 @@ class Handler(server.ProjectAPIHandler):
                 build_extra_flags += f"{item} "
 
         if self._cmsis_required(project_dir):
-            build_extra_flags += f"-I./include/cmsis "
+            build_extra_flags += "-I./include/cmsis "
             self._copy_cmsis(project_dir, cmsis_path)
 
         build_extra_flags += '"'
@@ -466,7 +464,7 @@ class Handler(server.ProjectAPIHandler):
         version_output = subprocess.run(
             [arduino_cli_path, "version"], check=True, stdout=subprocess.PIPE
         ).stdout.decode("utf-8")
-        str_version = re.search(r"Version: ([\.0-9]*)", version_output).group(1)
+        str_version = re.search(r"Version: ([\.0-9]*)", version_output)[1]
 
         # Using too low a version should raise an error. Note that naively
         # comparing floats will fail here: 0.7 > 0.21, but 0.21 is a higher
@@ -523,7 +521,7 @@ class Handler(server.ProjectAPIHandler):
         column_regex = r"\s*|".join(self.POSSIBLE_BOARD_LIST_HEADERS) + r"\s*"
         str_rows = tabular_str.split("\n")
         column_headers = list(re.finditer(column_regex, str_rows[0]))
-        assert len(column_headers) > 0
+        assert column_headers
 
         for str_row in str_rows[1:]:
             if not str_row.strip():
@@ -588,9 +586,8 @@ class Handler(server.ProjectAPIHandler):
         with open(makefile_path) as makefile_f:
             line = makefile_f.readline()
             if "BOARD" in line:
-                board = re.sub(r"\s", "", line).split(":=")[1]
-                return board
-        raise RuntimeError("Board was not found in Makefile: {}".format(makefile_path))
+                return re.sub(r"\s", "", line).split(":=")[1]
+        raise RuntimeError(f"Board was not found in Makefile: {makefile_path}")
 
     FLASH_TIMEOUT_SEC = 60
     FLASH_MAX_RETRIES = 5

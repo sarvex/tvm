@@ -62,16 +62,12 @@ def change_type(lines: List[str]) -> Change:
     """
     added_images = []
     removed_images = []
-    diff_lines = []
-
-    for line in lines[2:]:
-        if not line.startswith("-") and not line.startswith("+"):
-            # not a diff line, ignore it
-            continue
-
-        diff_lines.append(line)
-
-    if len(diff_lines) == 0:
+    diff_lines = [
+        line
+        for line in lines[2:]
+        if line.startswith("-") or line.startswith("+")
+    ]
+    if not diff_lines:
         # no changes made
         return Change.NONE
 
@@ -93,7 +89,7 @@ def change_type(lines: List[str]) -> Change:
             removed_images.append(match.groups()[0])
 
     # make sure that the added image lines match the removed image lines
-    if len(added_images) > 0 and added_images == removed_images:
+    if added_images and added_images == removed_images:
         return Change.IMAGES_ONLY
     else:
         return Change.FULL
@@ -104,18 +100,18 @@ def update_jenkinsfile(source: Path) -> ChangeData:
 
     data["generated_time"] = datetime.datetime.now().isoformat()
     if destination.exists():
-        with open(destination) as f:
-            old_generated_content = f.read()
+        old_generated_content = Path(destination).read_text()
+        if timestamp_match := re.search(
+            r"^// Generated at (.*)$",
+            old_generated_content,
+            flags=re.MULTILINE,
+        ):
+            original_timestamp = timestamp_match.groups()[0]
 
-        timestamp_match = re.search(
-            r"^// Generated at (.*)$", old_generated_content, flags=re.MULTILINE
-        )
-        if not timestamp_match:
+        else:
             raise RuntimeError(
                 f"Could not find timestamp in Jenkinsfile: {destination.relative_to(TEMPLATES_DIR)}"
             )
-        original_timestamp = timestamp_match.groups()[0]
-
     environment = jinja2.Environment(
         loader=jinja2.FileSystemLoader(TEMPLATES_DIR),
         undefined=jinja2.StrictUndefined,
@@ -132,13 +128,12 @@ def update_jenkinsfile(source: Path) -> ChangeData:
             diff=new_content, content=new_content, source=source, destination=destination
         )
 
-    diff = [
-        line
-        for line in difflib.unified_diff(
+    diff = list(
+        difflib.unified_diff(
             lines_without_generated_tag(old_generated_content),
             lines_without_generated_tag(new_content),
         )
-    ]
+    )
     change = change_type(diff)
     if not args.force and change == Change.IMAGES_ONLY or change == Change.NONE:
         if change != Change.NONE:

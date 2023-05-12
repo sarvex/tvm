@@ -46,11 +46,7 @@ def create_shared(output, objects, options=None):
     cmd = [compiler]
     cmd += ["-o", output]
 
-    if isinstance(objects, str):
-        cmd += [objects]
-    else:
-        cmd += objects
-
+    cmd += [objects] if isinstance(objects, str) else objects
     options = options if options else ["-shared", "-fPIC", "-lm"]
     cmd += options
 

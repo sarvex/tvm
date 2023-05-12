@@ -52,7 +52,7 @@ def find_clang(required=True):
     valid_list = [utils.which(x) for x in cc_list]
     valid_list = [x for x in valid_list if x]
     if not valid_list and required:
-        raise RuntimeError("cannot find clang, candidates are: " + str(cc_list))
+        raise RuntimeError(f"cannot find clang, candidates are: {cc_list}")
     return valid_list
 
 

@@ -51,7 +51,7 @@ class Sh:
     def __init__(self, env=None, cwd=None):
         self.env = os.environ.copy()
         if env is not None:
-            self.env.update(env)
+            self.env |= env
         self.cwd = cwd
 
     def tee(self, cmd: str, **kwargs):
@@ -72,9 +72,7 @@ class Sh:
             "env": self.env,
             "encoding": "utf-8",
             "cwd": self.cwd,
-        }
-        defaults.update(kwargs)
-
+        } | kwargs
         return subprocess.run(cmd, **defaults)
 
 
